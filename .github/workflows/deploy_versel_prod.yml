@@ -8,7 +8,9 @@ env:
 
 # Événements déclencheurs du workflow
 on:
-  workflow_dispatch
+  push:
+    branches-ignore:
+      - main # Exclut la branche "main" pour éviter que le workflow ne se déclenche sur celle-ci
 
 # Définition des jobs du workflow
 jobs:

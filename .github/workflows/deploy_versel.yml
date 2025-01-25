@@ -8,15 +8,18 @@ env:
 
 # Événements déclencheurs du workflow
 on:
-  push:
-    branches-ignore:
-      - main # Exclut la branche "main" pour éviter que le workflow ne se déclenche sur celle-ci
+  workflow_run:
+    workflows: ['CI']
+    types:
+      - completed
+
+  workflow_dispatch:
 
 # Définition des jobs du workflow
 jobs:
   Deploy-Preview: # Nom du job
     runs-on: ubuntu-latest # Spécifie le système d'exploitation sur lequel le job s'exécute
-
+    if: ${{  github.event.workflow_run.conclusion == 'success' }}
     steps:
       # Étape 1 : Récupérer le code source du dépôt
       - uses: actions/checkout@v2 # Action officielle pour cloner le dépôt
