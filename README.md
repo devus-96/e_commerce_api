@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Configuration de GitHub Actions avec Vercel
 
-## Getting Started
+Ce guide vous explique comment configurer GitHub Actions pour déployer automatiquement votre projet sur Vercel.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Étape 1 : Configuration côté GitHub
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Accéder aux paramètres du dépôt** :
+   - Rendez-vous sur votre dépôt GitHub.
+   - Cliquez sur l'onglet **Settings**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Créer les secrets nécessaires** :
+   - Allez dans **Secrets and variables > Actions** sous la section **Security**.
+   - Cliquez sur le bouton **New repository secret** et ajoutez les clés suivantes :
+     - **`VERCEL_ORG_ID`** : L'ID de votre organisation Vercel (disponible dans les paramètres de votre organisation sur Vercel).
+     - **`VERCEL_PROJECT_ID`** : L'ID de votre projet Vercel (trouvable dans les paramètres du projet sur Vercel).
+     - **`VERCEL_TOKEN`** : Un token d'accès personnel que vous pouvez générer dans votre compte Vercel :
+       - Connectez-vous à Vercel.
+       - Allez dans **Settings > Tokens**.
+       - Cliquez sur **Create Token**, copiez-le, puis ajoutez-le comme secret GitHub.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Créer un workflow GitHub Actions** :
+   - Dans votre dépôt, créez un fichier sous le chemin `.github/workflows/vercel-deploy.yml`.
+   - Ajoutez le contenu suivant :
 
-## Learn More
+     ```yaml
+     name: Vercel Preview Deployment
+     env:
+       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+     on:
+       push:
+         branches-ignore:
+           - main
+     jobs:
+       Deploy-Preview:
+         runs-on: ubuntu-latest
+         steps:
+           - uses: actions/checkout@v2
+           - name: Install Vercel CLI
+             run: npm install --global vercel@latest
+           - name: Pull Vercel Environment Information
+             run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+           - name: Build Project Artifacts
+             run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+           - name: Deploy Project Artifacts to Vercel
+             run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} .
+     ```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Étape 2 : Configuration côté Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Accéder aux paramètres du projet** :
+   - Connectez-vous à votre tableau de bord Vercel.
+   - Sélectionnez votre projet.
 
-## Deploy on Vercel
+2. **Vérifier les variables d'environnement** :
+   - Dans l'onglet **Settings > Environment Variables**, ajoutez toutes les variables nécessaires pour votre projet.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. **Lier le projet GitHub** :
+   - Si ce n’est pas déjà fait, connectez votre projet Vercel à votre dépôt GitHub :
+     - Allez dans l'onglet **Git**.
+     - Cliquez sur **Connect Git Repository**.
+     - Sélectionnez votre dépôt GitHub.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. **Activer les builds de prévisualisation** :
+   - Dans les paramètres Git, vérifiez que l’option **Preview Deployments** est activée.
+
+---
+
+## Étape 3 : Tester la configuration
+
+1. Poussez un commit sur une branche autre que `main`.
+2. Vérifiez que le workflow **Vercel Preview Deployment** est déclenché sur GitHub :
+   - Allez dans l'onglet **Actions** de votre dépôt.
+   - Assurez-vous que toutes les étapes du workflow s'exécutent correctement.
+3. Une fois terminé, vérifiez sur votre tableau de bord Vercel que le déploiement de prévisualisation est actif.
+
+---
+
+## Résultat attendu
+
+- À chaque fois que vous poussez un commit sur une branche autre que `main`, GitHub Actions déclenche un déploiement de prévisualisation sur Vercel.
+- Vous pouvez accéder au lien de déploiement de prévisualisation fourni par Vercel.
